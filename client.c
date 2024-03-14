@@ -19,29 +19,6 @@ void handle_send(int socket_fd);
 void handle_recv(int socket_fd);
 
 
-/*
-\33[2K  erases the entire line curror is on
-\33[A   moves cursor up one line
-\r      returns cursor to beginning of line
-
-text color
-\33[30m black
-\33[31m red
-\33[32m green
-\33[33m yellow
-\33[34m blue
-\33[35m magenta
-\33[36m cyan
-\33[37m white
-\33[39m default
-
-\33[0m revert - use after color to go back
- */
-
-
-
-
-
 
 int main(int argc, char *argv[]) {
   char *port;
@@ -65,9 +42,7 @@ int main(int argc, char *argv[]) {
   char buf[MAXDATASIZE];
   int len;
 
-
   socket_fd = setup_socket(address, port);
-
   
   // Accept incoming connections
   printf("client: connected to %s\n\n\n", address);
@@ -137,7 +112,6 @@ int setup_socket(char *address, char *port){
     printf("getaddrinfo error: %d\n", status);
     exit(1);
   }
-
 
   // Create Socket
   socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -218,8 +192,6 @@ void handle_recv(int socket_fd){
     // null out the bytes
     buf[num_bytes] = '\0';
 
-    //printf("client: recieved %s\n", buf);
-    //printf("\33[1A\33[2K\r%s\n> ", buf);
     append_screen(lines, LINES, buf);
     update_screen(lines, LINES);
   }
@@ -232,8 +204,13 @@ void handle_recv(int socket_fd){
 
 void update_screen(char *lines[], int count){
   int i;
-  printf("\033[0;0H");
+  printf("\033[0;0H"); // move cursor to 0,0
   for(i = 0; i < count; i++){
+    /*
+    \33[2K  erases the entire line curror is on
+    \33[A   moves cursor up one line
+    \r      returns cursor to beginning of line
+     */
     printf("\33[2K\r%s\n", lines[i]);
   }
 }
