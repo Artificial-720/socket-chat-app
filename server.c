@@ -9,7 +9,6 @@
 #include <pthread.h>     // pthreads
 
 
-
 #define PORT "5656"
 #define BACKLOG 10
 #define MAXDATASIZE 100
@@ -24,6 +23,24 @@ typedef struct {
   pthread_cond_t cond;
 } Queue;
 
+typedef struct {
+  Queue *q;
+  int socket_fd;
+} arg_struct;
+
+typedef struct {
+  Queue *q;
+  int *list;
+} arg_struct2;
+
+void *handle_client( void *ptr );
+void *handle_send( void *ptr );
+int setup_socket(char *port);
+char *build_message(char *username, char *msg, int color);
+
+/*
+ * Thread safe Queue
+ */
 void init_queue(Queue *q){
   q->rear = -1;
   memset(q, 0, sizeof(char)*MAXQUEUE);
@@ -37,7 +54,6 @@ void enqueue(Queue *q, char *value){
     printf("Queue is full\n");
   }else{
     q->items[++q->rear] = value;
-    //printf("adding item to queue '%s'\n", value);
   }
   pthread_mutex_unlock(&(q->mutex));
 }
@@ -78,52 +94,7 @@ void list_remove(int *list, int index){
 
 
 
-void *handle_client( void *ptr );
-void *handle_send( void *ptr );
 
-int setup_socket(char *port);
-
-typedef struct {
-  Queue *q;
-  int socket_fd;
-} arg_struct;
-
-typedef struct {
-  Queue *q;
-  int *list;
-} arg_struct2;
-
-char *build_message(char *username, char *msg, int color){
-  char *colors[] = {
-    "\33[30m[", // black
-    "\33[31m[", // red
-    "\33[32m[", // green
-    "\33[33m[", // yellow
-    "\33[34m[", // blue
-    "\33[35m[", // magenta
-    "\33[36m[", // cyan
-    "\33[37m[", // white
-    "\33[39m["  // default
-  };
-  // \33[<username>]:\33 <message>
-  int len;
-  char *start = colors[color];
-  char *end = "]:\33[0m ";
-  char *message;
-  // start + username + end + msg
-
-  len = strlen(username);
-  len += strlen(msg);
-  len += strlen(start);
-  len += strlen(end);
-  message = (char *)malloc(len + 1);
-  strcpy(message, start);
-  strcat(message, username);
-  strcat(message, end);
-  strcat(message, msg);
-
-  return message;
-}
 
 
 int main(int argc, char *argv[]){
@@ -350,4 +321,42 @@ void *handle_send( void *ptr ){
     }
   }
   return NULL;
+}
+
+
+
+
+
+
+
+char *build_message(char *username, char *msg, int color){
+  char *colors[] = {
+    "\33[30m[", // black
+    "\33[31m[", // red
+    "\33[32m[", // green
+    "\33[33m[", // yellow
+    "\33[34m[", // blue
+    "\33[35m[", // magenta
+    "\33[36m[", // cyan
+    "\33[37m[", // white
+    "\33[39m["  // default
+  };
+  // \33[<username>]:\33 <message>
+  int len;
+  char *start = colors[color];
+  char *end = "]:\33[0m ";
+  char *message;
+  // start + username + end + msg
+
+  len = strlen(username);
+  len += strlen(msg);
+  len += strlen(start);
+  len += strlen(end);
+  message = (char *)malloc(len + 1);
+  strcpy(message, start);
+  strcat(message, username);
+  strcat(message, end);
+  strcat(message, msg);
+
+  return message;
 }
